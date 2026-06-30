@@ -39,5 +39,5 @@ a folder index and a curated `CHANGELOG.md`.
 ## Consequences
 
 - The folder taxonomy and frontmatter are conventions everyone follows (see
-  [`CLAUDE.md`](../CLAUDE.md)).
+  [`CONVENTIONS.md`](../CONVENTIONS.md)).
 - Repo-specific detail stays in its repo; the wiki owns only cross-repo, durable knowledge.

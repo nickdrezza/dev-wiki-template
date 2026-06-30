@@ -24,7 +24,7 @@ change through review.** Work top to bottom; ask early if anything is unclear.
 
 ## Read these first
 
-- [ ] This wiki's [`README`](../README.md) and [`CLAUDE.md`](../CLAUDE.md) — how we document.
+- [ ] This wiki's [`README`](../README.md) and [`CONVENTIONS.md`](../CONVENTIONS.md) — how we document.
 - [ ] [`references/engineering-practices.md`](../references/engineering-practices.md) — how we write and review code.
 - [ ] [`policies/secrets-management.md`](../policies/secrets-management.md) — how we handle secrets.
 - [ ] The [systems registry](../systems/README.md) — a map of what we run and where its docs live.

@@ -10,5 +10,5 @@ meaningfully change a doc.
   `systems/registry.yml` with illustrative entries.
 - **2026-01-10** — First ADR: chose a plain-Markdown, Git-backed wiki filed by document type
   (`decisions/0001-use-a-markdown-wiki.md`).
-- **2026-01-08** — Initial structure: folders by document type, conventions in `CLAUDE.md`,
-  the `_template.md` skeleton, and the merge → chat notification workflow.
+- **2026-01-08** — Initial structure: folders by document type, conventions in
+  `CONVENTIONS.md`, the `_template.md` skeleton, and the merge → chat notification workflow.

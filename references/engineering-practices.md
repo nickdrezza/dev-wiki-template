@@ -31,7 +31,7 @@ for an exception, make it deliberately and say why in the pull request.
 
 - If a change alters how a system works or is operated, update the docs in the same PR.
 - Durable, cross-repo knowledge goes in this wiki; repo-specific detail stays in the repo
-  (see [`CLAUDE.md`](../CLAUDE.md) on source of truth).
+  (see [`CONVENTIONS.md`](../CONVENTIONS.md) on source of truth).
 
 ## Operations
 
