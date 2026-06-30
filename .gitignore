@@ -1,0 +1,19 @@
+# Obsidian — keep editor setup local, don't commit the vault config or vendored plugins
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/**/node_modules/
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/*.node
+
+# Local scratch / logs
+logs/
+*.log
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/

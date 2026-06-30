@@ -1,0 +1,38 @@
+# Systems registry — the team's catalog of the systems/repos we run.
+#
+# This is the canonical, machine-readable list. The source of truth for HOW each system
+# works is the repo itself (its README / docs/) — this file only records what the system is,
+# who owns it, and where its real docs live. Never copy repo docs in here; link to them via
+# `docs:`.
+#
+# Scope: the most-used systems, not every repo. Add an entry when a system is central enough
+# that the team needs to find it from one place.
+#
+# Schema (one entry per repo):
+#   repo       <org>/<name>
+#   title      human name
+#   purpose    one sentence — what it does
+#   owner      person or team responsible for keeping it (and its docs) true
+#   docs       URL to the canonical docs (the repo README is the front door)
+#   relates_to short slugs of systems it connects to (informational)
+
+- repo: acme/example-pipeline
+  title: Example data pipeline
+  purpose: Nightly job that extracts from the source DB, transforms in the warehouse, and publishes analytics tables.
+  owner: data-team
+  docs: https://example.com/acme/example-pipeline#readme
+  relates_to: [warehouse, source-db, dashboards]
+
+- repo: acme/example-web
+  title: Example web app
+  purpose: Customer-facing web application and its API.
+  owner: platform-team
+  docs: https://example.com/acme/example-web#readme
+  relates_to: [source-db, auth]
+
+- repo: acme/example-exports
+  title: Scheduled exports
+  purpose: Reads published analytics tables and delivers scheduled CSV/report exports to consumers.
+  owner: data-team
+  docs: https://example.com/acme/example-exports#readme
+  relates_to: [warehouse, example-pipeline]

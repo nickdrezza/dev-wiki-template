@@ -1,0 +1,27 @@
+name: ⚠️ Flag an outdated or incorrect doc
+description: Report a page that's stale, wrong, or misleading.
+title: "[stale] <doc path>"
+labels: ["documentation", "needs-update"]
+body:
+  - type: input
+    id: path
+    attributes:
+      label: Which doc?
+      description: Path to the file, e.g. systems/example-data-pipeline.md
+      placeholder: folder/doc-name.md
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong?
+      placeholder: What's out of date, incorrect, or misleading — and what's the current reality?
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the doc's `updated` date and `owner` in its frontmatter.
+          required: false

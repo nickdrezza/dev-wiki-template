@@ -1,0 +1,46 @@
+name: 📝 Propose a doc
+description: Suggest a new page the wiki should have (you don't have to write it).
+title: "[doc] <topic>"
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposing a doc is a real contribution — it captures a gap even if you can't fill it now.
+  - type: input
+    id: topic
+    attributes:
+      label: What should the doc cover?
+      placeholder: e.g. How we rotate database credentials
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: What type of doc is it?
+      description: See CONVENTIONS.md for what each type means.
+      options:
+        - policy (a rule we must follow)
+        - guide (how to do a task)
+        - system (how something we run works)
+        - runbook (what to do when something breaks)
+        - reference (a quick lookup)
+        - decision (why we chose something / ADR)
+        - incident (a post-mortem)
+        - not sure
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it needed?
+      placeholder: What problem does missing this doc cause? Who needs it?
+    validations:
+      required: false
+  - type: input
+    id: owner
+    attributes:
+      label: Suggested owner
+      description: Who would keep this doc true? (a person or team)
+    validations:
+      required: false

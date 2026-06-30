@@ -1,0 +1,139 @@
+name: Notify chat on merge
+
+# Posts a message to a team chat space whenever something lands on main (PR merge or direct
+# push). It diffs the push to surface new CHANGELOG.md bullets and the list of changed files.
+# The webhook URL is read from the CHAT_WEBHOOK_URL secret. The payload is a simple
+# {"text": "..."} body, which most chat providers' incoming webhooks accept; adjust the
+# payload at the end if yours expects a different shape.
+# Setup & troubleshooting: meta/chat-merge-notifications.md
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Need history back to the "before" commit so we can diff the push.
+          fetch-depth: 0
+
+      - name: Post merge to chat
+        env:
+          CHAT_WEBHOOK_URL: ${{ secrets.CHAT_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          ACTOR: ${{ github.event.pusher.name }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.event.head_commit.url }}
+          COMPARE_URL: ${{ github.event.compare }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CHAT_WEBHOOK_URL:-}" ]; then
+            echo "::error::CHAT_WEBHOOK_URL secret is not set. Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+          # Use only the first line of the commit message as the headline.
+          HEADLINE="$(printf '%s' "$COMMIT_MSG" | head -n1)"
+
+          # Many chat webhooks reject very long messages. Clamp each variable-length block to a
+          # safe byte budget, cutting only on line boundaries so UTF-8 stays valid, and note
+          # when content was dropped.
+          clamp_block() {
+            awk 'BEGIN { budget = 1500; used = 0; trunc = 0 }
+                 { len = length($0) + 1
+                   if (used + len > budget) { trunc = 1; next }
+                   used += len; print }
+                 END { if (trunc) print "…truncated — see full diff" }'
+          }
+
+          # Diff the push to find what content changed. On the very first push to a branch,
+          # BEFORE is all zeros — fall back to the commit itself.
+          if printf '%s' "$BEFORE" | grep -qE '^0+$'; then
+            CHANGES="$(git show --name-status --format= "$AFTER")"
+            CL_DIFF="$(git show --format= "$AFTER" -- CHANGELOG.md)"
+          else
+            CHANGES="$(git diff --name-status "$BEFORE" "$AFTER")"
+            CL_DIFF="$(git diff "$BEFORE" "$AFTER" -- CHANGELOG.md)"
+          fi
+
+          # Pull out any changelog bullets ADDED in this push and convert their markdown
+          # ("**bold**", "- ") to a simple bullet. Empty when the merge didn't add a changelog
+          # entry, in which case we omit the section below.
+          CHANGELOG_MD="$(printf '%s\n' "$CL_DIFF" \
+            | grep -E '^\+- ' \
+            | sed -E 's/^\+- /• /; s/\*\*//g' \
+            | clamp_block)"
+
+          # Build a list, one line per changed file, linked to its blob. Cap the list so a big
+          # merge doesn't blow past the message limit.
+          MAX=25
+          FILES_MD=""
+          COUNT=0
+          while IFS=$'\t' read -r st path newpath; do
+            [ -z "$st" ] && continue
+            COUNT=$((COUNT + 1))
+            [ "$COUNT" -gt "$MAX" ] && continue
+            code="${st%%[0-9]*}"   # strip similarity score from R100/C075
+            case "$code" in
+              A) emoji="🟢"; p="$path" ;;
+              M) emoji="🟡"; p="$path" ;;
+              D) emoji="🔴"; p="$path" ;;
+              R) emoji="🔁"; p="$newpath" ;;
+              C) emoji="📋"; p="$newpath" ;;
+              *) emoji="•";  p="$path" ;;
+            esac
+            if [ "$code" = "D" ]; then
+              FILES_MD="${FILES_MD}${emoji} ${path} (deleted)"$'\n'
+            else
+              FILES_MD="${FILES_MD}${emoji} <https://github.com/${REPO}/blob/${AFTER}/${p}|${p}>"$'\n'
+            fi
+          done <<EOF
+          $CHANGES
+          EOF
+
+          if [ "$COUNT" -gt "$MAX" ]; then
+            FILES_MD="${FILES_MD}…and $((COUNT - MAX)) more file(s)"$'\n'
+          fi
+          [ -z "$FILES_MD" ] && FILES_MD="No file changes detected"
+          # The 25-line cap bounds COUNT, but long blob URLs can still exceed the message
+          # limit — clamp by size as the real backstop.
+          FILES_MD="$(printf '%s' "$FILES_MD" | clamp_block)"
+
+          FILE_WORD="file"; [ "$COUNT" -ne 1 ] && FILE_WORD="files"
+
+          # Assemble the message. The <url|label> and *bold* syntax below is understood by many
+          # chat providers (Slack/Google Chat style). Adjust if yours differs. The changelog
+          # section is included only when the push added changelog bullets.
+          MSG="*${REPO}* — merged to \`${BRANCH}\`"$'\n'"<${COMMIT_URL}|${HEADLINE}>"$'\n'
+          if [ -n "$CHANGELOG_MD" ]; then
+            MSG="${MSG}"$'\n'"*Changelog*"$'\n'"${CHANGELOG_MD}"$'\n'
+          fi
+          MSG="${MSG}"$'\n'"*${COUNT} ${FILE_WORD} changed:*"$'\n'"${FILES_MD}"$'\n'
+          MSG="${MSG}"$'\n'"by *${ACTOR}* · <${COMPARE_URL}|view full diff>"
+
+          # jq safely escapes the message into the {"text": ...} payload.
+          PAYLOAD="$(jq -n --arg text "$MSG" '{text: $text}')"
+
+          # Post and fail the job on a non-2xx response so a broken webhook is visible.
+          http_code="$(curl -sS -o /tmp/chat_resp.json -w '%{http_code}' \
+            -X POST "$CHAT_WEBHOOK_URL" \
+            -H 'Content-Type: application/json; charset=UTF-8' \
+            --data "$PAYLOAD")"
+
+          echo "Chat webhook responded with HTTP $http_code"
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "::error::Chat webhook returned HTTP $http_code"
+            cat /tmp/chat_resp.json || true
+            exit 1
+          fi
+          echo "Notification sent."
