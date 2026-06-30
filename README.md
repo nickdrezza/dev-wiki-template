@@ -84,6 +84,9 @@ fit — open the repo as a vault for fast search, backlinks, and a file tree. Th
 (`.obsidian/`) is intentionally **not** committed (see [`.gitignore`](.gitignore)); keep your
 editor setup local.
 
+See [`OBSIDIAN.md`](OBSIDIAN.md) for a full setup guide — opening the vault, keeping links
+GitHub-compatible, wiring up the doc template, and committing your changes.
+
 ## License
 
 [MIT](LICENSE) — free to use, adapt, and share.
